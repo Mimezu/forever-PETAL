@@ -1,0 +1,4 @@
+<Bindings>
+    <Binding name="PETAL_CHANGE_PET" header="PETAL">PETAL_KeybindChangePet()</Binding>
+    <Binding name="PETAL_TOGGLE_JOURNAL">PETAL_ToggleJournal()</Binding>
+</Bindings>

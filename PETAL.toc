@@ -1,0 +1,17 @@
+## Interface: 16001
+## Title: Petal
+## Notes: Summons your pets automatically, with different pets for different places.
+## Author: Mimezu
+## Version: 2.0.1
+## SavedVariables: PETALDB
+## IconTexture: Interface\AddOns\PETAL\Media\PetalIcon
+## Category: Mimezu's Suite
+## Group: Mimezu_Journals
+
+Core.lua
+Collection.lua
+Places.lua
+Summoner.lua
+Keepsakes.lua
+Skin.lua
+UI.lua
