@@ -6,7 +6,6 @@
 ## SavedVariables: PETALDB
 ## IconTexture: Interface\AddOns\PETAL\Media\PetalIcon
 ## Category: Mimezu's Suite
-## Group: Mimezu_Journals
 
 Core.lua
 Collection.lua
