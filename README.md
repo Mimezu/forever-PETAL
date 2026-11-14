@@ -6,13 +6,13 @@ Petal 2.0 is the Forever version of retail PETAL (a rewrite).
 
 ## Open it
 
-`/petal`, or bind **Open Petal** under Key Bindings > Petal.
+`/petal`, the minimap icon, Esc > Options > AddOns > Petal, or the **Open Petal** key (set it in Options).
 
 ## Pages (side tabs)
 
 - **Pets**: your collection. Tick the pets Petal can summon. Select a pet to see its model and description, choose the places it appears in, summon or dismiss it, favorite it, or unwrap a new pet.
 - **Places**: your current place and a grid of ticked pets by place (Cities, Inns & towns, Outdoors, Dungeons, Raids, Battlegrounds). A place with no pets uses all ticked pets.
-- **Options**: automatic summoning, keep pets you summon yourself, wait after you dismiss a pet, switch pets from time to time, an optional chat message, and the **Summon another pet** key.
+- **Options**: automatic summoning, keep pets you summon yourself, wait after you dismiss a pet, switch pets from time to time, an optional chat message, both keys (**Open Petal**, **Summon another**) and the minimap icon.
 - **Saved sets**: save, load, overwrite and delete sets, and share them as codes (`PETALF1`; retail `PETAL1` codes also import: open world becomes Outdoors, neighborhood is dropped).
 
 ## When Petal waits

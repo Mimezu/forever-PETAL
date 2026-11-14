@@ -72,9 +72,11 @@ local function Mock(kind)
     end })
 end
 local eventFrame
+local loginFrames = {}
 function CreateFrame(kind, name, parent, template)
     local frame = Mock()
     if kind == "Frame" and not name and not parent and not eventFrame then eventFrame = frame end
+    rawset(frame, "RegisterEvent", function(self, event) if event == "PLAYER_LOGIN" and self ~= eventFrame then loginFrames[#loginFrames + 1] = self end end)
     if name then _G[name] = frame end
     if kind == "CheckButton" then frame.Text = Mock() end
     return frame
@@ -91,8 +93,35 @@ NineSliceUtil = { ApplyLayoutByName = function() end }
 Enum = { PetJournalError = { InvalidFaction = 3 }, ModelBlendOperation = { None = 0 } }
 function date(fmt, t) return "27 Sep 2026" end
 function time() return 1790000000 end
-function GetBindingKey() return nil end
-function InCombatLockdown() return false end
+-- Key bindings: key -> action.
+local bindings, saved, inCombat = { ["CTRL-J"] = "TOGGLEJOURNAL" }, 0, false
+BINDING_NAME_TOGGLEJOURNAL = "Adventure Guide"
+function GetBindingKey(action)
+    local keys = {}
+    for key, a in pairs(bindings) do if a == action then keys[#keys + 1] = key end end
+    table.sort(keys)
+    return unpack(keys)
+end
+function GetBindingAction(key) return bindings[key] or "" end
+function GetBindingText(key) return key end
+function SetBinding(key, action) bindings[key] = action end
+function SaveBindings() saved = saved + 1 end
+function GetCurrentBindingSet() return 1 end
+function InCombatLockdown() return inCombat end
+local mods = { alt = false, ctrl = false, shift = false }
+function IsAltKeyDown() return mods.alt end
+function IsControlKeyDown() return mods.ctrl end
+function IsShiftKeyDown() return mods.shift end
+local popups = {}
+StaticPopupDialogs = {}
+function StaticPopup_Show(name, a, b, c, data) popups[#popups + 1] = { name = name, a = a, b = b, c = c, data = data } end
+Minimap = Mock()
+function GetMinimapShape() return "ROUND" end
+local settingsPages = {}
+Settings = {
+    RegisterCanvasLayoutCategory = function(panel, name) return { panel = panel, name = name } end,
+    RegisterAddOnCategory = function(category) settingsPages[#settingsPages + 1] = category end,
+}
 
 -- Player state ------------------------------------------------------------------
 local player = { combat = false, mounted = false, instance = nil, resting = false, mapID = 1429, zone = "Elwynn Forest", auras = {} }
@@ -154,12 +183,13 @@ C_PetJournal = {
 
 -- Load the addon ----------------------------------------------------------------------
 local A = {}
-for _, file in ipairs({ "Core.lua", "Collection.lua", "Places.lua", "Summoner.lua", "Keepsakes.lua", "Skin.lua", "UI.lua" }) do
+for _, file in ipairs({ "Core.lua", "Collection.lua", "Places.lua", "Summoner.lua", "Keepsakes.lua", "Skin.lua", "Keys.lua", "UI.lua", "Minimap.lua" }) do
     assert(loadfile(file))("PETAL", A)
 end
 local function fire(event, ...) eventFrame.scripts.OnEvent(eventFrame, event, ...) end
 fire("ADDON_LOADED", "PETAL")
 fire("PLAYER_LOGIN")
+for _, f in ipairs(loginFrames) do f.scripts.OnEvent(f, "PLAYER_LOGIN") end
 
 check(#A.pets == 4, "other-faction companion hidden, four remain")
 check(A.collectionSource == "owned", "GetOwnedPetIDs path used")
@@ -306,5 +336,55 @@ fire("PLAYER_LOGOUT")
 local total = 0
 for _, seconds in pairs(A.db.together) do total = total + seconds end
 check(total > 0, "time together recorded")
+
+-- Keys ------------------------------------------------------------------------------------------
+local K = A.Keys
+check(K.Text("PETAL_TOGGLE_JOURNAL") == nil, "no key at first")
+check(K.Bind("PETAL_TOGGLE_JOURNAL", "P") and bindings.P == "PETAL_TOGGLE_JOURNAL" and saved == 1, "bind saves")
+K.Bind("PETAL_TOGGLE_JOURNAL", "O")
+check(bindings.P == nil and bindings.O == "PETAL_TOGGLE_JOURNAL", "a new key replaces the old one")
+mods.ctrl = true
+check(K.Combo("J") == "CTRL-J", "modifiers combine")
+mods.ctrl = false
+check(K.Taken("PETAL_CHANGE_PET", "CTRL-J") == "Adventure Guide", "a used key is named")
+check(K.Taken("PETAL_TOGGLE_JOURNAL", "O") == nil, "own key is not taken")
+K.Offer("PETAL_CHANGE_PET", "CTRL-J")
+check(#popups == 1 and popups[1].b == "Adventure Guide" and bindings["CTRL-J"] == "TOGGLEJOURNAL", "asks before replacing")
+StaticPopupDialogs.PETAL_REPLACE_KEY.OnAccept(nil, popups[1].data)
+check(bindings["CTRL-J"] == "PETAL_CHANGE_PET", "replaces on yes")
+K.Offer("PETAL_CHANGE_PET", "N")
+check(#popups == 1 and bindings.N == "PETAL_CHANGE_PET" and bindings["CTRL-J"] == nil, "free key binds at once")
+check(K.Refused("BUTTON1") and K.Refused("ENTER") and not K.Refused("BUTTON3"), "clicks and Enter refused")
+inCombat = true
+check(not K.Bind("PETAL_CHANGE_PET", "M") and bindings.N == "PETAL_CHANGE_PET", "no binding in combat")
+inCombat = false
+check(K.Clear("PETAL_CHANGE_PET") and K.Text("PETAL_CHANGE_PET") == nil, "right-click clears")
+
+-- The setter listens for the next key ------------------------------------------------------------
+local setter = K.Setter(UIParent, "PETAL_CHANGE_PET", 150)
+setter.scripts.OnClick(setter, "LeftButton")
+check(setter:GetText():find("Press a key"), "click listens")
+setter.scripts.OnKeyDown(setter, "LSHIFT")
+check(setter.scripts.OnKeyDown ~= nil, "a modifier alone keeps listening")
+mods.shift = true
+setter.scripts.OnKeyDown(setter, "K")
+mods.shift = false
+check(bindings["SHIFT-K"] == "PETAL_CHANGE_PET" and setter:GetText() == "SHIFT-K", "next key binds")
+setter.scripts.OnClick(setter, "LeftButton")
+setter.scripts.OnKeyDown(setter, "ESCAPE")
+check(bindings["SHIFT-K"] == "PETAL_CHANGE_PET" and setter.scripts.OnKeyDown == nil, "Escape cancels")
+
+-- Minimap button and Settings page ----------------------------------------------------------------
+check(A.db.minimapButton == true and _G.PetalMinimapButton and _G.PetalMinimapButton:IsShown(), "minimap button shown by default")
+A.SetOption("minimapButton", false)
+check(not _G.PetalMinimapButton:IsShown(), "minimap button hides")
+A.SetOption("minimapButton", true)
+check(_G.PetalMinimapButton:IsShown(), "minimap button comes back")
+local x, y = A.Minimap.Offset(0)
+check(x > 50 and math.abs(y) < 0.001, "east of the minimap")
+check(#settingsPages == 1 and settingsPages[1].name == "Petal", "Settings page registered")
+_G.PetalJournal:Hide()
+_G.PetalMinimapButton.scripts.OnClick()
+check(_G.PetalJournal:IsShown(), "minimap click opens Petal")
 
 print(("PETAL smoke: %d assertions passed"):format(assertions))

@@ -575,7 +575,7 @@ local function BuildPlaces(page)
         local ok, reason = A.CallAnother("window")
         if not ok and reason then UIErrorsFrame:AddMessage(A.BlockText(reason), 1, 0.82, 0) end
     end, 24)
-    Tooltip(another, "Summon another pet", "Summons a different pet for this place. You can set a key for it in Options.")
+    Tooltip(another, "Summon another pet", "Summons a different pet for this place. Key: Options.")
 
     local GRID_H = PH - TOP_H - GAP
     local grid = Card(page, nil, 0, -TOP_H - GAP, PW, GRID_H)
@@ -681,18 +681,13 @@ end
 
 -- Page 3: Options ------------------------------------------------------------------------
 
-local function BindingText()
-    local key = GetBindingKey("PETAL_CHANGE_PET")
-    return key and (GetBindingText and GetBindingText(key) or key) or nil
-end
-
 local function BuildOptions(page)
     local db = A.db
     local updaters = {}
     local CW = (PW - GAP) / 2
     local RIGHT = CW + GAP
     local TEXT_W = CW - 50
-    local H1, H2 = 132, 100
+    local H1, H2 = 132, 114
     local H3 = PH - H1 - H2 - 2 * GAP
 
     local auto = Card(page, "Automatic summoning", 0, 0, CW, H1)
@@ -755,46 +750,14 @@ local function BuildOptions(page)
         end
     end
 
-    local keyCard = Card(page, "Key: summon another pet", RIGHT, -H1 - GAP, CW, H2)
-    local keyButton = Button(keyCard, "", 10, -38, 180, nil, 24)
-    Note(keyCard, "Click, then press a key. Right-click to clear.\nOr type /petal next.", 12, -70, CW - 24)
-    local capturing = false
-    local function ShowKey()
-        keyButton:SetText(capturing and "|cffffd100Press a key...|r" or (BindingText() or "|cff808080Not set|r"))
+    local keyCard = Card(page, "Keys and icon", RIGHT, -H1 - GAP, CW, H2)
+    for i, entry in ipairs(A.Keys.ACTIONS) do
+        local y = -36 - (i - 1) * 26
+        Text(keyCard, entry.label, 14, y - 4, "GameFontHighlight")
+        local setter = A.Keys.Setter(keyCard, entry.action, 170)
+        setter:SetPoint("TOPLEFT", CW - 182, y)
     end
-    local function StopCapture()
-        capturing = false
-        keyButton:EnableKeyboard(false)
-        keyButton:SetScript("OnKeyDown", nil)
-        ShowKey()
-    end
-    keyButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    keyButton:SetScript("OnClick", function(self, mouse)
-        if InCombatLockdown() then UIErrorsFrame:AddMessage("Can't change keys in combat.", 1, 0.3, 0.3); return end
-        if mouse == "RightButton" then
-            local old = GetBindingKey("PETAL_CHANGE_PET")
-            if old then SetBinding(old); SaveBindings(GetCurrentBindingSet()) end
-            StopCapture()
-            return
-        end
-        capturing = true
-        ShowKey()
-        self:EnableKeyboard(true)
-        if self.SetPropagateKeyboardInput then self:SetPropagateKeyboardInput(false) end
-        self:SetScript("OnKeyDown", function(_, key)
-            if key == "ESCAPE" then StopCapture(); return end
-            if key:find("SHIFT") or key:find("CTRL") or key:find("ALT") or key == "UNKNOWN" then return end
-            local combo = (IsAltKeyDown() and "ALT-" or "") .. (IsControlKeyDown() and "CTRL-" or "")
-                .. (IsShiftKeyDown() and "SHIFT-" or "") .. key
-            local old = GetBindingKey("PETAL_CHANGE_PET")
-            if old then SetBinding(old) end
-            SetBinding(combo, "PETAL_CHANGE_PET")
-            SaveBindings(GetCurrentBindingSet())
-            StopCapture()
-        end)
-    end)
-    keyButton:HookScript("OnHide", function() if capturing then StopCapture() end end)
-    updaters[#updaters + 1] = function() if not capturing then ShowKey() end end
+    Check(keyCard, "minimapButton", "Minimap icon", 10, -86, TEXT_W)
 
     local waits = Card(page, "When Petal waits", RIGHT, -H1 - H2 - 2 * GAP, CW, H3)
     Note(waits, "No summoning while you are in combat, mounted, on a flight path, eating or drinking, "
@@ -1117,9 +1080,9 @@ A.On("feedback", function(reason)
     if reason and UIErrorsFrame then UIErrorsFrame:AddMessage(A.BlockText(reason), 1, 0.82, 0) end
 end)
 
-function A.ToggleJournal(page)
+function A.ToggleJournal(page, open)
     if not frame then Build() end
-    if frame:IsShown() and not page then
+    if frame:IsShown() and not page and not open then
         frame:Hide()
     else
         if page then A.db.page = page end

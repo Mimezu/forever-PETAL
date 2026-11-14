@@ -12,7 +12,7 @@
 local ADDON, A = ...
 _G.PETAL = A
 A.name = ADDON
-A.version = "2.0.1"
+A.version = "2.1.0"
 
 BINDING_HEADER_PETAL = "Petal"
 BINDING_NAME_PETAL_CHANGE_PET = "Summon another pet"
@@ -32,6 +32,8 @@ A.DEFAULTS = {
     whispers = false,         -- a short line in chat when a companion joins
     page = 1,
     filter = "all",
+    minimapButton = true,
+    minimapAngle = 215,
 }
 
 local function CopyDefaults(db)
@@ -49,6 +51,7 @@ local function CopyDefaults(db)
     db.graceMinutes = math.max(1, math.min(60, tonumber(db.graceMinutes) or 10))
     db.shuffleMin = math.max(5, math.min(180, tonumber(db.shuffleMin) or 20))
     db.shuffleMax = math.max(db.shuffleMin, math.min(240, tonumber(db.shuffleMax) or 40))
+    db.minimapAngle = (tonumber(db.minimapAngle) or 215) % 360
     db.version = 1
 end
 
