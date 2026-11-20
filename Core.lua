@@ -12,7 +12,7 @@
 local ADDON, A = ...
 _G.PETAL = A
 A.name = ADDON
-A.version = "2.1.0"
+A.version = "2.1.1"
 
 BINDING_HEADER_PETAL = "Petal"
 BINDING_NAME_PETAL_CHANGE_PET = "Summon another pet"
