@@ -129,7 +129,6 @@ function M.Refresh()
     Place(A.db.minimapAngle)
     button:SetShown(on)
 end
-function M.Button() return button end
 
 -- Blizzard Settings page -----------------------------------------------------------
 
@@ -186,7 +185,6 @@ local function RegisterSettings()
 
     local category = Settings.RegisterCanvasLayoutCategory(panel, "Petal")
     Settings.RegisterAddOnCategory(category)
-    M.settingsCategory = category
 end
 
 A.On("options", function() M.Refresh() end)

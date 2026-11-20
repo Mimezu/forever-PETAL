@@ -318,7 +318,6 @@ local function Whisper(pet, place)
     local line = lines[math.random(1, #lines)]:format(who)
     if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cffd8c09a" .. line .. "|r") end
 end
-A.Whisper = Whisper
 
 local function Choose(pool, avoidKey)
     local candidates = {}
@@ -335,7 +334,6 @@ local function Summon(pet, place, quiet)
     local ok = A.SummonPet(pet)
     if not ok then S.pendingKey = nil; return false end
     A.db.called[pet.key] = (A.db.called[pet.key] or 0) + 1
-    A.lastCalled = pet.key
     if not quiet then Whisper(pet, place) end
     A.Fire("pet")
     return true
@@ -355,7 +353,6 @@ function A.Evaluate(reason, force)
     end
     local function Finish(ok, why)
         A.lastBlock = not ok and why or nil
-        A.lastResult = why
         A.Fire("state", why)
         return ok, why
     end
@@ -422,5 +419,3 @@ function A.DismissCurrent()
     local current = A.CurrentPet()
     if current then A.DismissPet(current) end
 end
-
-function A.OwnChoiceKey() return S.ownChoice and S.ownChoice.key or nil end
