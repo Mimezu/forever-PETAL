@@ -212,7 +212,6 @@ Register("PET_JOURNAL_LIST_UPDATE")
 Register("NEW_PET_ADDED")
 Register("PLAYER_DEAD")
 
-local lastAuraCheck = 0
 frame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == ADDON then A.InitDB() end
@@ -246,10 +245,7 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         A.ObservePet(event)
     elseif event == "UNIT_AURA" then
         -- Only matters while Petal is waiting on food, drink or a campfire.
-        if A.waitingOnAura and A.Now() - lastAuraCheck > 1 then
-            lastAuraCheck = A.Now()
-            A.RequestEvaluation(0.5, "aura changed")
-        end
+        if A.waitingOnAura then A.RequestEvaluation(0.5, "aura changed") end
     elseif CAST_END[event] then
         if A.waitingOnCast then A.RequestEvaluation(0.4, "cast ended") end
     else
