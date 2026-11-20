@@ -233,8 +233,11 @@ frame:SetScript("OnEvent", function(_, event, arg1)
     if event == "COMPANION_UPDATE" then
         -- Nil or "CRITTER": a companion came or went. "MOUNT" is irrelevant.
         if arg1 == nil or arg1 == "CRITTER" then
+            local before = A.state.currentKey
             A.ObservePet(event)
-            A.RequestEvaluation(0.6, event)
+            if arg1 == "CRITTER" or A.state.currentKey ~= before then
+                A.RequestEvaluation(0.6, event)
+            end
         end
     elseif event == "PET_JOURNAL_LIST_UPDATE" or event == "COMPANION_LEARNED"
         or event == "COMPANION_UNLEARNED" or event == "NEW_PET_ADDED" then
